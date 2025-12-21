@@ -1,0 +1,529 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Results - NEXUS OMEGA{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 30px;
+        border-bottom: 2px solid rgba(78, 168, 255, 0.3);
+        flex-wrap: wrap;
+    }
+
+    .tab {
+        padding: 12px 25px;
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+        border-bottom: 3px solid transparent;
+    }
+
+    .tab:hover {
+        color: var(--primary-color);
+    }
+
+    .tab.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+    }
+
+    .tab-content {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .content-section {
+        background: var(--card-bg);
+        padding: 30px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(128, 128, 128, 0.2);
+    }
+
+    .section-title {
+        color: var(--primary-color);
+        font-size: 22px;
+        margin-bottom: 15px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .text-box {
+        background: rgba(14, 17, 23, 0.8);
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid var(--primary-color);
+        font-size: 16px;
+        line-height: 1.8;
+        color: var(--text-color);
+    }
+
+    .keyword-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .keyword-tag {
+        background: linear-gradient(135deg, var(--success-color), #27ae60);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .translate-section {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 15px;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .translate-output {
+        background: rgba(46, 204, 113, 0.1);
+        border: 1px solid var(--success-color);
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+
+    .audio-player {
+        width: 100%;
+        margin-top: 15px;
+    }
+
+    .image-container {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-top: 20px;
+    }
+
+    .image-container img {
+        width: 100%;
+        border-radius: 8px;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .stat-item {
+        background: rgba(78, 168, 255, 0.1);
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 3px solid var(--primary-color);
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 1px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-color);
+        margin-top: 5px;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    table th, table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+    }
+
+    table th {
+        background: rgba(78, 168, 255, 0.2);
+        color: var(--primary-color);
+        font-weight: 700;
+    }
+
+    table tr:hover {
+        background: rgba(78, 168, 255, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="nexus-header">
+    <h1 class="nexus-title">ANALYSIS RESULTS</h1>
+    <h3 class="nexus-subtitle">COMPREHENSIVE SPEECH INTELLIGENCE REPORT</h3>
+    <hr class="nexus-divider">
+</div>
+
+<!-- Metrics Dashboard - Row 1: Core NLP Metrics -->
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-label">Emotion</div>
+        <div class="metric-value {% if results.emotion.label.lower() in ['happy', 'neutral'] %}color-safe{% elif results.emotion.label.lower() in ['anger', 'sadness'] %}color-danger{% else %}color-neutral{% endif %}">
+            {{ results.emotion.label|upper }}
+        </div>
+        <div class="metric-detail">{{ (results.emotion.score * 100)|round(1) }}% Confidence</div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-label">Sentiment (English Only)</div>
+        <div class="metric-value {% if results.sentiment.label == 'POSITIVE' %}color-safe{% else %}color-danger{% endif %}">
+            {{ results.sentiment.label }}
+        </div>
+        <div class="metric-detail">{{ results.sentiment.score|round(2) }} Score</div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-label">Toxicity (English Only)</div>
+        <div class="metric-value {% if results.toxicity.score > 0.5 %}color-danger{% else %}color-safe{% endif %}">
+            {% if results.toxicity.score > 0.5 %}TOXIC{% else %}SAFE{% endif %}
+        </div>
+        <div class="metric-detail">{{ results.toxicity.score|round(2) }} Prob</div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-label">Word Count</div>
+        <div class="metric-value color-neutral">{{ results.text.split()|length }}</div>
+        <div class="metric-detail">Language: {{ results.lang }}</div>
+    </div>
+</div>
+
+<!-- Metrics Dashboard - Row 2: Acoustic & Quality Metrics -->
+<div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr);">
+    <div class="metric-card">
+        <div class="metric-label">Noise / WPM</div>
+        <div class="metric-value">{{ results.noise[0] }} / {{ results.wpm }} WPM</div>
+        <div class="metric-detail">Ratio: {{ results.noise[1]|round(2) }}</div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-label">Topic / Grammar</div>
+        <div class="metric-value">{{ results.topic.label }}</div>
+        <div class="metric-detail">Confidence: {{ results.topic.score|round(1) }}% | Grammar: {{ results.grammar.score|round(1) }}%</div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-label">Active Time / Score</div>
+        <div class="metric-value">{{ results.speaking_time }} sec</div>
+        <div class="metric-detail">Comm Score: {{ results.score }}/100</div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+    <button class="tab active" onclick="switchTab('transcript')">📝 Transcript</button>
+    <button class="tab" onclick="switchTab('translate')">🌍 Translate</button>
+    <button class="tab" onclick="switchTab('timeline')">📉 Emotion Timeline</button>
+    <button class="tab" onclick="switchTab('wordcloud')">☁️ Word Cloud</button>
+    <button class="tab" onclick="switchTab('download')">📄 Download</button>
+</div>
+
+<!-- Tab 1: Transcript -->
+<div id="transcript" class="tab-content active">
+    <div class="content-section">
+        <h3 class="section-title">Original Text</h3>
+        <div class="text-box">{{ results.text }}</div>
+    </div>
+
+    <div class="content-section">
+        <h3 class="section-title">AI Summary</h3>
+        <div class="text-box">{{ results.summary }}</div>
+    </div>
+
+    <div class="content-section">
+        <h3 class="section-title">🧠 Topic Analysis</h3>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Most Likely Topic</div>
+                <div class="stat-value" style="font-size: 18px;">{{ results.topic.label }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Confidence</div>
+                <div class="stat-value">{{ results.topic.score|round(1) }}%</div>
+            </div>
+        </div>
+
+        {% if results.topic.raw_results %}
+        <h4 style="margin-top: 20px; color: var(--text-muted);">All Topic Scores:</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Topic</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for topic, score in results.topic.raw_results %}
+                <tr>
+                    <td>{{ topic }}</td>
+                    <td>{{ (score * 100)|round(1) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+
+    <div class="content-section">
+        <h3 class="section-title">✍️ Advanced Grammar Correction (T5 - English Only)</h3>
+        
+        <h4 style="color: var(--text-muted); margin-bottom: 10px;">T5 Corrected Text:</h4>
+        <div class="text-box">{{ results.grammar.corrected_text }}</div>
+
+        <h4 style="color: var(--text-muted); margin: 20px 0 10px 0;">Grammar Changes Highlighted:</h4>
+        <div class="text-box" style="border-left-color: var(--warning-color);">
+            {{ results.grammar.highlight|safe }}
+        </div>
+
+        <div class="stats-grid" style="margin-top: 20px;">
+            <div class="stat-item">
+                <div class="stat-label">Grammar Quality Score (AI Index)</div>
+                <div class="stat-value" style="color: {% if results.grammar.score >= 90 %}var(--success-color){% elif results.grammar.score >= 75 %}var(--warning-color){% else %}var(--danger-color){% endif %};">
+                    {{ results.grammar.score|round(1) }}%
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Status</div>
+                <div class="stat-value" style="font-size: 18px;">{{ results.grammar.status }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h3 class="section-title">Top Keywords</h3>
+        <div class="keyword-tags">
+            {% for keyword in results.keywords %}
+            <span class="keyword-tag">{{ keyword }}</span>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Tab 2: Translation -->
+<div id="translate" class="tab-content">
+    <div class="content-section">
+        <h3 class="section-title">Text & Speech-to-Speech Translation (NLLB-200)</h3>
+        
+        <div class="translate-section">
+            <select id="targetLang" class="form-select">
+                {% for lang in target_languages %}
+                <option value="{{ lang }}">{{ lang }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-primary" onclick="translateText()">Translate & Generate Audio</button>
+        </div>
+
+        <div id="translateOutput" class="hidden"></div>
+        <div id="translateSpinner" class="hidden">
+            <div class="spinner"></div>
+            <p style="text-align: center;">Translating and generating speech...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Tab 3: Emotion Timeline -->
+<div id="timeline" class="tab-content">
+    <div class="content-section">
+        <h3 class="section-title">Emotion Flow Over Time</h3>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">
+            ⚠️ Note: Timeline analysis is resource-intensive and is capped at 60 seconds.
+        </p>
+        <button class="btn btn-primary" onclick="generateTimeline()">Generate Timeline</button>
+        
+        <div id="timelineSpinner" class="hidden">
+            <div class="spinner"></div>
+            <p style="text-align: center;">Processing audio chunks...</p>
+        </div>
+        <div id="timelineOutput" class="hidden"></div>
+    </div>
+</div>
+
+<!-- Tab 4: Word Cloud -->
+<div id="wordcloud" class="tab-content">
+    <div class="content-section">
+        <h3 class="section-title">Word Cloud Visualization</h3>
+        <button class="btn btn-primary" onclick="generateWordCloud()">Generate Word Cloud</button>
+        
+        <div id="wordcloudSpinner" class="hidden">
+            <div class="spinner"></div>
+            <p style="text-align: center;">Generating word cloud...</p>
+        </div>
+        <div id="wordcloudOutput" class="hidden"></div>
+    </div>
+</div>
+
+<!-- Tab 5: Download -->
+<div id="download" class="tab-content">
+    <div class="content-section">
+        <h3 class="section-title">Generate Professional Report</h3>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">
+            Download a comprehensive PDF report with all analysis results, metrics, and insights.
+        </p>
+        <button class="btn btn-primary" onclick="generatePDF()">📥 Download PDF Report</button>
+    </div>
+</div>
+
+<!-- Navigation -->
+<div style="text-align: center; margin-top: 40px;">
+    <a href="/" class="btn btn-secondary">← Analyze Another Audio</a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function switchTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        // Show selected tab
+        document.getElementById(tabName).classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    async function translateText() {
+        const targetLang = document.getElementById('targetLang').value;
+        const spinner = document.getElementById('translateSpinner');
+        const output = document.getElementById('translateOutput');
+        
+        spinner.classList.remove('hidden');
+        output.classList.add('hidden');
+        
+        try {
+            const formData = new FormData();
+            formData.append('target_lang', targetLang);
+            
+            const response = await fetch('/translate', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                output.innerHTML = `
+                    <div class="translate-output">
+                        <h4 style="color: var(--success-color); margin-bottom: 15px;">✓ Translation Complete</h4>
+                        <div class="text-box">${result.translated_text}</div>
+                        ${result.audio ? `
+                            <h4 style="margin-top: 20px; color: var(--text-muted);">🔊 Listen to Translation:</h4>
+                            <audio class="audio-player" controls>
+                                <source src="data:audio/mp3;base64,${result.audio}" type="audio/mp3">
+                            </audio>
+                        ` : '<p style="color: var(--warning-color); margin-top: 15px;">⚠️ Audio generation unavailable for this language.</p>'}
+                    </div>
+                `;
+                output.classList.remove('hidden');
+            } else {
+                showAlert('Translation failed: ' + (result.error || 'Unknown error'), 'danger');
+            }
+        } catch (error) {
+            showAlert('Translation error: ' + error.message, 'danger');
+        } finally {
+            spinner.classList.add('hidden');
+        }
+    }
+
+    async function generateTimeline() {
+        const spinner = document.getElementById('timelineSpinner');
+        const output = document.getElementById('timelineOutput');
+        
+        spinner.classList.remove('hidden');
+        output.classList.add('hidden');
+        
+        try {
+            const response = await fetch('/emotion_timeline');
+            const result = await response.json();
+            
+            if (result.success) {
+                output.innerHTML = `
+                    <div class="image-container">
+                        <img src="data:image/png;base64,${result.image}" alt="Emotion Timeline">
+                    </div>
+                `;
+                output.classList.remove('hidden');
+            } else {
+                showAlert('Timeline generation failed: ' + (result.error || 'Unknown error'), 'danger');
+            }
+        } catch (error) {
+            showAlert('Timeline error: ' + error.message, 'danger');
+        } finally {
+            spinner.classList.add('hidden');
+        }
+    }
+
+    async function generateWordCloud() {
+        const spinner = document.getElementById('wordcloudSpinner');
+        const output = document.getElementById('wordcloudOutput');
+        
+        spinner.classList.remove('hidden');
+        output.classList.add('hidden');
+        
+        try {
+            const response = await fetch('/wordcloud');
+            const result = await response.json();
+            
+            if (result.success) {
+                output.innerHTML = `
+                    <div class="image-container">
+                        <img src="data:image/png;base64,${result.image}" alt="Word Cloud">
+                    </div>
+                `;
+                output.classList.remove('hidden');
+            } else {
+                showAlert(result.error || 'Not enough words for word cloud', 'danger');
+            }
+        } catch (error) {
+            showAlert('Word cloud error: ' + error.message, 'danger');
+        } finally {
+            spinner.classList.add('hidden');
+        }
+    }
+
+    function generatePDF() {
+        window.location.href = '/generate_pdf';
+    }
+</script>
+{% endblock %}

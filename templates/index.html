@@ -1,0 +1,505 @@
+{% extends "base.html" %}
+
+{% block title %}NEXUS OMEGA - Upload{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-section {
+        max-width: 800px;
+        margin: 0 auto;
+        background: var(--card-bg);
+        padding: 40px;
+        border-radius: 15px;
+        border: 1px solid rgba(78, 168, 255, 0.3);
+    }
+
+    /* Microphone Recording Styles */
+    .recording-section {
+        background: rgba(78, 168, 255, 0.05);
+        border: 2px solid var(--primary-color);
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+
+    .recording-controls {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        justify-content: center;
+        margin: 20px 0;
+    }
+
+    .btn-record {
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        color: white;
+        padding: 15px 40px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .btn-record:hover:not(:disabled) {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+    }
+
+    .btn-record:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-stop {
+        background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        color: white;
+        padding: 15px 40px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .btn-stop:hover:not(:disabled) {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(149, 165, 166, 0.4);
+    }
+
+    .btn-stop:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .recording-status {
+        text-align: center;
+        font-size: 18px;
+        font-weight: 600;
+        margin: 15px 0;
+        color: var(--text-color);
+    }
+
+    .recording-timer {
+        text-align: center;
+        font-size: 36px;
+        font-weight: 700;
+        color: var(--danger-color);
+        font-family: 'Courier New', monospace;
+        margin: 10px 0;
+    }
+
+    .audio-preview {
+        margin-top: 20px;
+        padding: 20px;
+        background: rgba(46, 204, 113, 0.1);
+        border: 1px solid var(--success-color);
+        border-radius: 8px;
+    }
+
+    .input-method-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 30px;
+        justify-content: center;
+    }
+
+    .tab-button {
+        padding: 12px 30px;
+        background: rgba(78, 168, 255, 0.1);
+        border: 2px solid transparent;
+        color: var(--text-muted);
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .tab-button:hover {
+        background: rgba(78, 168, 255, 0.2);
+    }
+
+    .tab-button.active {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+
+    .tab-content-section {
+        display: none;
+    }
+
+    .tab-content-section.active {
+        display: block;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: var(--text-color);
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .form-control, .form-select {
+        width: 100%;
+        padding: 12px 15px;
+        background: rgba(14, 17, 23, 0.8);
+        border: 1px solid rgba(128, 128, 128, 0.3);
+        border-radius: 8px;
+        color: var(--text-color);
+        font-size: 16px;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 10px rgba(78, 168, 255, 0.3);
+    }
+
+    .file-upload-wrapper {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+        width: 100%;
+    }
+
+    .file-upload-wrapper input[type=file] {
+        position: absolute;
+        left: -9999px;
+    }
+
+    .file-upload-label {
+        display: block;
+        padding: 30px;
+        background: rgba(78, 168, 255, 0.1);
+        border: 2px dashed var(--primary-color);
+        border-radius: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .file-upload-label:hover {
+        background: rgba(78, 168, 255, 0.2);
+        border-color: #6db8ff;
+    }
+
+    .file-icon {
+        font-size: 48px;
+        margin-bottom: 10px;
+    }
+
+    .checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .checkbox-wrapper input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    #selectedFile {
+        margin-top: 15px;
+        padding: 10px;
+        background: rgba(46, 204, 113, 0.1);
+        border: 1px solid var(--success-color);
+        border-radius: 6px;
+        color: var(--success-color);
+        font-weight: 500;
+    }
+
+    .settings-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .settings-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header - Exact from Streamlit -->
+<div class="nexus-header">
+    <h1 class="nexus-title">NEXUS OMEGA: ADVANCED SPEECH INTELLIGENCE</h1>
+    <h3 class="nexus-subtitle">ACOUSTICS • EMOTION • ANALYTICS • INSIGHTS</h3>
+    <hr class="nexus-divider">
+</div>
+
+<div class="upload-section">
+    <h2 style="text-align: center; margin-bottom: 30px; color: var(--primary-color);">
+        🎙️ Audio Input for Analysis
+    </h2>
+
+    <!-- Input Method Tabs -->
+    <div class="input-method-tabs">
+        <button type="button" class="tab-button active" onclick="switchInputMethod('record')">
+            🎤 Record Live
+        </button>
+        <button type="button" class="tab-button" onclick="switchInputMethod('upload')">
+            📁 Upload File
+        </button>
+    </div>
+
+    <!-- MICROPHONE RECORDING SECTION (NEW - Matching Streamlit's st.audio_input) -->
+    <div id="recordSection" class="tab-content-section active">
+        <div class="recording-section">
+            <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 20px;">
+                🎙️ Real-Time Microphone Recording
+            </h3>
+            
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 25px;">
+                Record your speech directly from your microphone
+            </p>
+
+            <div class="recording-status" id="recordingStatus">
+                🎙️ Ready to record
+            </div>
+
+            <div class="recording-timer hidden" id="recordingTimer">
+                00:00
+            </div>
+
+            <div class="recording-controls">
+                <button type="button" class="btn-record" id="startRecording" onclick="startRecordingHandler()">
+                    ⏺️ Start Recording
+                </button>
+                <button type="button" class="btn-stop" id="stopRecording" onclick="stopRecordingHandler()" disabled>
+                    ⏹️ Stop Recording
+                </button>
+            </div>
+
+            <!-- Recording Duration Setting -->
+            <div class="form-group" style="max-width: 300px; margin: 20px auto 0 auto;">
+                <label class="form-label" style="text-align: center;">Recording Duration</label>
+                <select id="recordingDuration" class="form-select">
+                    <option value="5">5 seconds</option>
+                    <option value="10">10 seconds</option>
+                    <option value="15">15 seconds</option>
+                    <option value="30" selected>30 seconds</option>
+                    <option value="60">60 seconds (Max)</option>
+                </select>
+            </div>
+
+            <!-- Audio Preview -->
+            <div id="audioPreview" class="hidden"></div>
+        </div>
+    </div>
+
+    <!-- FILE UPLOAD SECTION (EXISTING) -->
+    <div id="uploadSection" class="tab-content-section">
+        <form id="uploadForm" enctype="multipart/form-data">
+        <!-- File Upload -->
+        <div class="form-group">
+            <label class="form-label">📁 Audio File</label>
+            <div class="file-upload-wrapper">
+                <input type="file" id="audioFile" name="audio_file" accept=".wav,.mp3,.flac" required>
+                <label for="audioFile" class="file-upload-label">
+                    <div class="file-icon">📤</div>
+                    <div>Click to upload or drag and drop</div>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 5px;">
+                        Supported: WAV, MP3, FLAC (Max 500MB)
+                    </div>
+                </label>
+            </div>
+            <div id="selectedFile" class="hidden"></div>
+        </div>
+
+        <!-- Settings Grid -->
+        <div class="settings-grid">
+            <!-- Language Selection -->
+            <div class="form-group">
+                <label class="form-label">🗣️ Spoken Language</label>
+                <select id="language" name="language" class="form-select">
+                    {% for lang in languages %}
+                    <option value="{{ lang }}" {% if lang == 'Auto-Detect' %}selected{% endif %}>
+                        {{ lang }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Translate Direct -->
+            <div class="form-group">
+                <label class="form-label">🌍 Translation Mode</label>
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" id="translateDirect" name="translate_direct" value="true">
+                    <label for="translateDirect" style="margin: 0; cursor: pointer;">
+                        Transcribe directly to English
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analyze Button -->
+        <div class="form-group" style="text-align: center; margin-top: 40px;">
+            <button type="submit" class="btn btn-primary" style="padding: 15px 50px; font-size: 18px;">
+                🚀 ANALYZE AUDIO
+            </button>
+        </div>
+    </form>
+    </div>
+
+    <!-- Common Settings (Applied to both recording and upload) -->
+    <div style="margin-top: 30px; padding-top: 30px; border-top: 1px solid rgba(128, 128, 128, 0.2);">
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 20px;">
+            ⚙️ Analysis Settings
+        </h3>
+
+    <!-- Loading Spinner -->
+    <div id="spinner" class="hidden">
+        <div class="spinner"></div>
+        <p style="text-align: center; margin-top: 15px; color: var(--text-muted);">
+            AI is analyzing your speech... This may take a few moments.
+        </p>
+    </div>
+</div>
+
+<!-- Info Section -->
+<div style="max-width: 800px; margin: 40px auto; padding: 30px; background: rgba(78, 168, 255, 0.05); border-radius: 12px;">
+    <h3 style="color: var(--primary-color); margin-bottom: 15px;">✨ Features</h3>
+    <ul style="color: var(--text-muted); line-height: 2;">
+        <li>🎯 Advanced Speech-to-Text (Whisper)</li>
+        <li>😊 Emotion Detection (Wav2Vec2)</li>
+        <li>💬 Sentiment & Toxicity Analysis</li>
+        <li>📝 AI Grammar Correction (T5)</li>
+        <li>🌍 Multi-Language Translation (NLLB 1.3B)</li>
+        <li>🔊 Text-to-Speech Output</li>
+        <li>📊 Acoustic Analysis (Noise, WPM, Speaking Time)</li>
+        <li>🧠 Topic Classification</li>
+        <li>📄 Professional PDF Reports</li>
+        <li>☁️ Word Cloud Visualization</li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/audio_recorder.js') }}"></script>
+<script>
+    // Input method switching
+    function switchInputMethod(method) {
+        // Update tab buttons
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+
+        // Show/hide sections
+        if (method === 'record') {
+            document.getElementById('recordSection').classList.add('active');
+            document.getElementById('uploadSection').classList.remove('active');
+        } else {
+            document.getElementById('recordSection').classList.remove('active');
+            document.getElementById('uploadSection').classList.add('active');
+        }
+    }
+
+    // Recording handlers (using AudioRecorder class)
+    function startRecordingHandler() {
+        if (!audioRecorder) {
+            showAlert('Audio recorder not initialized. Please refresh the page.', 'danger');
+            return;
+        }
+        
+        const duration = parseInt(document.getElementById('recordingDuration').value);
+        audioRecorder.startRecording(duration);
+    }
+
+    function stopRecordingHandler() {
+        if (!audioRecorder) return;
+        audioRecorder.stopRecording();
+    }
+
+    // File selection handler (EXISTING - PRESERVED)
+    document.getElementById('audioFile').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const fileInfo = document.getElementById('selectedFile');
+            fileInfo.textContent = `✓ Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            fileInfo.classList.remove('hidden');
+        }
+    });
+
+    // Form submission (EXISTING - PRESERVED)
+    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        const audioFile = document.getElementById('audioFile').files[0];
+        const language = document.getElementById('language').value;
+        const translateDirect = document.getElementById('translateDirect').checked;
+        
+        if (!audioFile) {
+            showAlert('Please select an audio file', 'danger');
+            return;
+        }
+        
+        formData.append('audio_file', audioFile);
+        formData.append('language', language);
+        formData.append('translate_direct', translateDirect);
+        
+        // Show loading
+        showSpinner();
+        document.querySelector('.btn-primary').disabled = true;
+        
+        try {
+            // Step 1: Upload file
+            const uploadResponse = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!uploadResponse.ok) {
+                const error = await uploadResponse.json();
+                throw new Error(error.error || 'Upload failed');
+            }
+            
+            // Step 2: Analyze
+            const analyzeFormData = new FormData();
+            analyzeFormData.append('language', language);
+            analyzeFormData.append('translate_direct', translateDirect);
+            
+            const analyzeResponse = await fetch('/analyze', {
+                method: 'POST',
+                body: analyzeFormData
+            });
+            
+            if (!analyzeResponse.ok) {
+                const error = await analyzeResponse.json();
+                throw new Error(error.error || 'Analysis failed');
+            }
+            
+            const result = await analyzeResponse.json();
+            
+            // Redirect to results
+            window.location.href = '/results';
+            
+        } catch (error) {
+            hideSpinner();
+            document.querySelector('.btn-primary').disabled = false;
+            showAlert('Error: ' + error.message, 'danger');
+        }
+    });
+</script>
+{% endblock %}

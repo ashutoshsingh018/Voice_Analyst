@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NEXUS OMEGA{% endblock %}</title>
+    <style>
+        :root {
+            --primary-color: #4ea8ff;
+            --secondary-color: #2c3e50;
+            --bg-color: #0e1117;
+            --card-bg: #1a1f2e;
+            --text-color: #f0f0f0;
+            --text-muted: #b5bac6;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --neutral-color: #3498db;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0e1117 0%, #1a1f2e 100%);
+            color: var(--text-color);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header Styling - Exact from Streamlit */
+        .nexus-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, rgba(78, 168, 255, 0.1) 0%, rgba(26, 31, 46, 0.8) 100%);
+            border-radius: 15px;
+            border: 1px solid rgba(78, 168, 255, 0.3);
+        }
+
+        .nexus-title {
+            font-weight: 850;
+            font-size: 2.9rem;
+            letter-spacing: -1.4px;
+            color: var(--text-color);
+            text-transform: uppercase;
+            text-shadow: 0 0 14px rgba(78,168,255,0.35);
+            margin-bottom: 10px;
+        }
+
+        .nexus-subtitle {
+            font-weight: 300;
+            font-size: 1.05rem;
+            letter-spacing: 4px;
+            color: var(--text-muted);
+            opacity: 0.85;
+        }
+
+        .nexus-divider {
+            width: 52%;
+            margin: 18px auto 0 auto;
+            border: none;
+            border-top: 1.3px solid rgba(78, 168, 255, 0.45);
+            box-shadow: 0 0 6px rgba(78,168,255,0.25);
+        }
+
+        /* Metric Cards - Exact from Streamlit */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background-color: var(--card-bg);
+            border: 1px solid rgba(128, 128, 128, 0.2);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(78, 168, 255, 0.3);
+        }
+
+        .metric-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+
+        .metric-detail {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* Color classes */
+        .color-safe { color: var(--success-color); }
+        .color-danger { color: var(--danger-color); }
+        .color-neutral { color: var(--neutral-color); }
+        .color-warn { color: var(--warning-color); }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), #2980b9);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(78, 168, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #34495e;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 4px solid rgba(78, 168, 255, 0.3);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden { display: none; }
+
+        /* Alerts */
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: rgba(46, 204, 113, 0.2);
+            border: 1px solid var(--success-color);
+            color: var(--success-color);
+        }
+
+        .alert-danger {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid var(--danger-color);
+            color: var(--danger-color);
+        }
+
+        .alert-info {
+            background: rgba(52, 152, 219, 0.2);
+            border: 1px solid var(--neutral-color);
+            color: var(--neutral-color);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        // Global helper functions
+        function showSpinner() {
+            document.getElementById('spinner').classList.remove('hidden');
+        }
+
+        function hideSpinner() {
+            document.getElementById('spinner').classList.add('hidden');
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
