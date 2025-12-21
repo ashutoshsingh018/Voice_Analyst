@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Recorder - Diagnostic Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #0e1117;
+            color: #f0f0f0;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #1a1f2e;
+            border: 1px solid #4ea8ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .pass { background: rgba(46, 204, 113, 0.2); border-left: 4px solid #2ecc71; }
+        .fail { background: rgba(231, 76, 60, 0.2); border-left: 4px solid #e74c3c; }
+        .info { background: rgba(52, 152, 219, 0.2); border-left: 4px solid #3498db; }
+        button {
+            background: #4ea8ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover { background: #6db8ff; }
+        button:disabled { background: #555; cursor: not-allowed; }
+        #console {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        h2 { color: #4ea8ff; }
+        h3 { color: #6db8ff; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Audio Recorder Diagnostic Test</h1>
+    <p>This page will help identify why live audio input isn't working.</p>
+
+    <!-- Test 1: Browser Support -->
+    <div class="test-section">
+        <h2>Test 1: Browser Compatibility</h2>
+        <div id="test1-results"></div>
+        <button onclick="runTest1()">Run Test</button>
+    </div>
+
+    <!-- Test 2: Microphone Access -->
+    <div class="test-section">
+        <h2>Test 2: Microphone Permission</h2>
+        <div id="test2-results"></div>
+        <button onclick="runTest2()">Request Microphone Access</button>
+    </div>
+
+    <!-- Test 3: MediaRecorder -->
+    <div class="test-section">
+        <h2>Test 3: MediaRecorder Test</h2>
+        <div id="test3-results"></div>
+        <button id="test3-start" onclick="runTest3Start()">Start Test Recording (3s)</button>
+        <button id="test3-stop" onclick="runTest3Stop()" disabled>Stop Recording</button>
+        <div id="test3-preview"></div>
+    </div>
+
+    <!-- Test 4: Flask Upload -->
+    <div class="test-section">
+        <h2>Test 4: Flask Backend Connection</h2>
+        <div id="test4-results"></div>
+        <button onclick="runTest4()">Test Upload Endpoint</button>
+    </div>
+
+    <!-- Test 5: Full Integration -->
+    <div class="test-section">
+        <h2>Test 5: Full Integration Test</h2>
+        <div id="test5-results"></div>
+        <button onclick="runTest5()">Run Full Test (5s recording)</button>
+    </div>
+
+    <!-- Console Output -->
+    <div class="test-section">
+        <h2>Debug Console</h2>
+        <div id="console"></div>
+        <button onclick="clearConsole()">Clear Console</button>
+    </div>
+
+    <script>
+        // Console logger
+        function log(message, type = 'info') {
+            const console = document.getElementById('console');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+            console.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function clearConsole() {
+            document.getElementById('console').textContent = '';
+        }
+
+        function showResult(elementId, message, status) {
+            const el = document.getElementById(elementId);
+            const div = document.createElement('div');
+            div.className = `test-result ${status}`;
+            div.textContent = message;
+            el.appendChild(div);
+        }
+
+        // Test 1: Browser Support
+        function runTest1() {
+            log('Running Test 1: Browser Compatibility', 'info');
+            const results = document.getElementById('test1-results');
+            results.innerHTML = '';
+
+            // Check getUserMedia
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                showResult('test1-results', '✅ getUserMedia API: Supported', 'pass');
+                log('getUserMedia: Supported', 'success');
+            } else {
+                showResult('test1-results', '❌ getUserMedia API: NOT Supported', 'fail');
+                log('getUserMedia: NOT Supported - Browser too old', 'error');
+            }
+
+            // Check MediaRecorder
+            if (typeof MediaRecorder !== 'undefined') {
+                showResult('test1-results', '✅ MediaRecorder API: Supported', 'pass');
+                log('MediaRecorder: Supported', 'success');
+
+                // Check supported MIME types
+                const types = [
+                    'audio/webm;codecs=opus',
+                    'audio/webm',
+                    'audio/ogg;codecs=opus',
+                    'audio/mp4'
+                ];
+
+                types.forEach(type => {
+                    const supported = MediaRecorder.isTypeSupported(type);
+                    const status = supported ? 'pass' : 'fail';
+                    const icon = supported ? '✅' : '❌';
+                    showResult('test1-results', `${icon} MIME type "${type}": ${supported ? 'Supported' : 'Not supported'}`, status);
+                    log(`MIME type "${type}": ${supported}`, supported ? 'success' : 'error');
+                });
+            } else {
+                showResult('test1-results', '❌ MediaRecorder API: NOT Supported', 'fail');
+                log('MediaRecorder: NOT Supported', 'error');
+            }
+
+            // Check secure context (HTTPS)
+            if (window.isSecureContext) {
+                showResult('test1-results', '✅ Secure Context (HTTPS/localhost): Yes', 'pass');
+                log('Secure context: Yes', 'success');
+            } else {
+                showResult('test1-results', '⚠️ Secure Context: No (Microphone may not work)', 'fail');
+                log('Secure context: No - Use HTTPS or localhost', 'error');
+            }
+        }
+
+        // Test 2: Microphone Permission
+        async function runTest2() {
+            log('Running Test 2: Microphone Permission', 'info');
+            const results = document.getElementById('test2-results');
+            results.innerHTML = '';
+
+            try {
+                showResult('test2-results', 'ℹ️ Requesting microphone permission...', 'info');
+                log('Requesting microphone access...', 'info');
+
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                showResult('test2-results', '✅ Microphone permission: GRANTED', 'pass');
+                log('Microphone permission: GRANTED', 'success');
+
+                // Show microphone info
+                const tracks = stream.getAudioTracks();
+                if (tracks.length > 0) {
+                    const track = tracks[0];
+                    showResult('test2-results', `✅ Microphone found: ${track.label || 'Default'}`, 'pass');
+                    log(`Microphone: ${track.label}`, 'success');
+
+                    const settings = track.getSettings();
+                    showResult('test2-results', `ℹ️ Sample rate: ${settings.sampleRate || 'Unknown'} Hz`, 'info');
+                    showResult('test2-results', `ℹ️ Channels: ${settings.channelCount || 'Unknown'}`, 'info');
+                    log(`Settings: ${JSON.stringify(settings)}`, 'info');
+                }
+
+                // Cleanup
+                stream.getTracks().forEach(track => track.stop());
+                log('Stream stopped', 'info');
+
+            } catch (error) {
+                showResult('test2-results', `❌ Microphone permission: DENIED - ${error.message}`, 'fail');
+                log(`Microphone error: ${error.name} - ${error.message}`, 'error');
+                
+                if (error.name === 'NotAllowedError') {
+                    showResult('test2-results', 'ℹ️ Fix: Allow microphone in browser settings and try again', 'info');
+                } else if (error.name === 'NotFoundError') {
+                    showResult('test2-results', 'ℹ️ Fix: No microphone detected. Check connections.', 'info');
+                }
+            }
+        }
+
+        // Test 3: MediaRecorder Recording
+        let test3Stream = null;
+        let test3Recorder = null;
+        let test3Chunks = [];
+
+        async function runTest3Start() {
+            log('Running Test 3: MediaRecorder Recording', 'info');
+            const results = document.getElementById('test3-results');
+            results.innerHTML = '';
+
+            try {
+                // Get microphone
+                test3Stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                showResult('test3-results', '✅ Microphone accessed', 'pass');
+                log('Microphone accessed for recording test', 'success');
+
+                // Create recorder
+                const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+                    ? 'audio/webm;codecs=opus' 
+                    : 'audio/webm';
+                
+                test3Recorder = new MediaRecorder(test3Stream, { mimeType });
+                showResult('test3-results', `ℹ️ Using MIME type: ${mimeType}`, 'info');
+                log(`MediaRecorder created: ${mimeType}`, 'info');
+
+                // Reset chunks
+                test3Chunks = [];
+
+                // Handle data
+                test3Recorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        test3Chunks.push(event.data);
+                        log(`Data chunk: ${event.data.size} bytes`, 'info');
+                    }
+                };
+
+                // Handle stop
+                test3Recorder.onstop = () => {
+                    log('Recording stopped', 'info');
+                    
+                    if (test3Chunks.length === 0) {
+                        showResult('test3-results', '❌ No audio data captured!', 'fail');
+                        log('ERROR: No audio data captured', 'error');
+                        return;
+                    }
+
+                    const blob = new Blob(test3Chunks, { type: mimeType });
+                    showResult('test3-results', `✅ Audio captured: ${(blob.size / 1024).toFixed(2)} KB`, 'pass');
+                    log(`Audio blob created: ${blob.size} bytes`, 'success');
+
+                    // Create preview
+                    const url = URL.createObjectURL(blob);
+                    const preview = document.getElementById('test3-preview');
+                    preview.innerHTML = `
+                        <div style="margin-top: 10px; padding: 10px; background: rgba(46,204,113,0.1); border-radius: 5px;">
+                            <p style="color: #2ecc71;">✅ Recording successful! Preview:</p>
+                            <audio controls style="width: 100%;">
+                                <source src="${url}" type="${mimeType}">
+                            </audio>
+                        </div>
+                    `;
+                    log('Preview created', 'success');
+                };
+
+                // Start recording
+                test3Recorder.start(1000);
+                showResult('test3-results', '🔴 Recording... (will auto-stop in 3 seconds)', 'info');
+                log('Recording started', 'info');
+
+                // Enable stop button
+                document.getElementById('test3-start').disabled = true;
+                document.getElementById('test3-stop').disabled = false;
+
+                // Auto-stop after 3 seconds
+                setTimeout(() => {
+                    if (test3Recorder && test3Recorder.state === 'recording') {
+                        runTest3Stop();
+                    }
+                }, 3000);
+
+            } catch (error) {
+                showResult('test3-results', `❌ Recording failed: ${error.message}`, 'fail');
+                log(`Recording error: ${error.name} - ${error.message}`, 'error');
+            }
+        }
+
+        function runTest3Stop() {
+            if (test3Recorder && test3Recorder.state === 'recording') {
+                test3Recorder.stop();
+                log('Stop requested', 'info');
+            }
+            
+            if (test3Stream) {
+                test3Stream.getTracks().forEach(track => track.stop());
+                test3Stream = null;
+            }
+
+            document.getElementById('test3-start').disabled = false;
+            document.getElementById('test3-stop').disabled = true;
+        }
+
+        // Test 4: Flask Backend
+        async function runTest4() {
+            log('Running Test 4: Flask Backend Connection', 'info');
+            const results = document.getElementById('test4-results');
+            results.innerHTML = '';
+
+            try {
+                // Test if /upload endpoint exists
+                showResult('test4-results', 'ℹ️ Testing /upload endpoint...', 'info');
+                log('Testing /upload endpoint...', 'info');
+
+                // Create dummy audio data
+                const dummyBlob = new Blob(['test'], { type: 'audio/webm' });
+                const formData = new FormData();
+                formData.append('audio_file', dummyBlob, 'test.webm');
+                formData.append('language', 'English');
+                formData.append('translate_direct', 'false');
+
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                showResult('test4-results', `ℹ️ Response status: ${response.status}`, 'info');
+                log(`Upload endpoint response: ${response.status}`, response.ok ? 'success' : 'error');
+
+                const data = await response.json();
+                log(`Response data: ${JSON.stringify(data)}`, 'info');
+
+                if (response.ok) {
+                    showResult('test4-results', '✅ Flask backend: Connected and responding', 'pass');
+                    log('Backend test: SUCCESS', 'success');
+                } else {
+                    showResult('test4-results', `⚠️ Backend responded with error: ${data.error}`, 'fail');
+                    log(`Backend error: ${data.error}`, 'error');
+                }
+
+            } catch (error) {
+                showResult('test4-results', `❌ Flask backend: Connection failed - ${error.message}`, 'fail');
+                log(`Backend connection error: ${error.message}`, 'error');
+                showResult('test4-results', 'ℹ️ Fix: Ensure Flask is running on http://localhost:5000', 'info');
+            }
+        }
+
+        // Test 5: Full Integration
+        async function runTest5() {
+            log('Running Test 5: Full Integration Test', 'info');
+            const results = document.getElementById('test5-results');
+            results.innerHTML = '';
+
+            showResult('test5-results', 'ℹ️ Starting full integration test (5s recording)...', 'info');
+
+            try {
+                // Step 1: Get microphone
+                log('Step 1: Requesting microphone...', 'info');
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                showResult('test5-results', '✅ Step 1: Microphone accessed', 'pass');
+
+                // Step 2: Create recorder
+                log('Step 2: Creating MediaRecorder...', 'info');
+                const mimeType = 'audio/webm;codecs=opus';
+                const recorder = new MediaRecorder(stream, { mimeType });
+                const chunks = [];
+
+                recorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) chunks.push(event.data);
+                };
+
+                recorder.onstop = async () => {
+                    log('Step 3: Recording stopped', 'info');
+                    
+                    const blob = new Blob(chunks, { type: mimeType });
+                    showResult('test5-results', `✅ Step 3: Audio captured (${(blob.size/1024).toFixed(2)} KB)`, 'pass');
+
+                    // Step 4: Upload
+                    log('Step 4: Uploading to Flask...', 'info');
+                    const formData = new FormData();
+                    formData.append('audio_file', blob, 'test_recording.webm');
+                    formData.append('language', 'English');
+
+                    try {
+                        const uploadResponse = await fetch('/upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (uploadResponse.ok) {
+                            showResult('test5-results', '✅ Step 4: Upload successful', 'pass');
+                            log('Upload: SUCCESS', 'success');
+                            showResult('test5-results', '🎉 FULL INTEGRATION TEST: PASSED', 'pass');
+                            log('=== FULL TEST PASSED ===', 'success');
+                        } else {
+                            const error = await uploadResponse.json();
+                            showResult('test5-results', `❌ Step 4: Upload failed - ${error.error}`, 'fail');
+                            log(`Upload failed: ${error.error}`, 'error');
+                        }
+                    } catch (uploadError) {
+                        showResult('test5-results', `❌ Step 4: Upload error - ${uploadError.message}`, 'fail');
+                        log(`Upload error: ${uploadError.message}`, 'error');
+                    }
+
+                    // Cleanup
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                // Start recording
+                recorder.start(1000);
+                showResult('test5-results', '🔴 Step 2: Recording started (5s)...', 'info');
+                log('Recording started...', 'info');
+
+                // Stop after 5 seconds
+                setTimeout(() => {
+                    recorder.stop();
+                    log('Recording stop requested', 'info');
+                }, 5000);
+
+            } catch (error) {
+                showResult('test5-results', `❌ Test failed: ${error.message}`, 'fail');
+                log(`Integration test error: ${error.message}`, 'error');
+            }
+        }
+
+        // Initial log
+        log('Diagnostic page loaded. Run tests to identify issues.', 'info');
+    </script>
+</body>
+</html>

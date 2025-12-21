@@ -18,7 +18,8 @@ from config import Config
 from models import model_manager
 from audio_processor import (
     clean_audio, estimate_noise_level, calculate_wpm,
-    detect_speaking_time, validate_audio_file, generate_emotion_timeline
+    detect_speaking_time, validate_audio_file, generate_emotion_timeline,
+    convert_audio_format  # NEW: For browser-recorded audio
 )
 from analyzers import (
     smart_emotion_detection, analyze_sentiment, analyze_toxicity,
@@ -59,6 +60,8 @@ def upload_file():
     """
     Handle file upload and initial processing
     Maps to Streamlit's file_uploader + analyze button
+    
+    UPDATED: Now handles both file uploads AND browser-recorded audio
     """
     if 'audio_file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
@@ -68,19 +71,33 @@ def upload_file():
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
     
-    if not validate_audio_file(file):
-        return jsonify({'error': 'Invalid file type. Use WAV, MP3, or FLAC'}), 400
+    # Validate file (supports WebM/OGG for browser recordings)
+    filename = secure_filename(file.filename)
+    is_valid_upload = validate_audio_file(file)
+    is_browser_recording = filename.endswith(('.webm', '.ogg'))
+    
+    if not is_valid_upload and not is_browser_recording:
+        return jsonify({'error': 'Invalid file type. Use WAV, MP3, FLAC, WebM, or OGG'}), 400
     
     # Save file
-    filename = secure_filename(file.filename)
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(filepath)
     
+    # NEW: Convert browser recordings to WAV format
+    if is_browser_recording:
+        print(f"[Flask] Browser recording detected: {filename}")
+        converted_path = convert_audio_format(filepath)
+        
+        if converted_path != filepath:
+            # Use converted file and clean up original
+            filepath = converted_path
+            print(f"[Flask] Using converted file: {filepath}")
+    
     # Store in session
     session['audio_path'] = filepath
-    session['filename'] = filename
+    session['filename'] = os.path.basename(filepath)
     
-    return jsonify({'success': True, 'filename': filename})
+    return jsonify({'success': True, 'filename': os.path.basename(filepath)})
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
@@ -345,6 +362,14 @@ def results():
                           results=session['analysis_results'],
                           target_languages=Config.NLLB_LANG_MAP.keys())
 
+@app.route('/audio_test')
+def audio_test():
+    """
+    Diagnostic test page for audio recording
+    NEW: Helps debug microphone issues
+    """
+    return render_template('audio_test.html')
+
 # ============================================================================
 # ERROR HANDLERS
 # ============================================================================
@@ -362,4 +387,4 @@ def internal_error(e):
 # ============================================================================
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5002)
+    app.run(debug=True, host='0.0.0.0', port=5003)
